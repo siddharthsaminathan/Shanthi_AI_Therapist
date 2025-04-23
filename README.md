@@ -1,64 +1,97 @@
-# Shnathi 🧠 – Empathetic AI Therapist
+# Shanthi AI Therapist
 
-**Shnathi** is a locally running voice-based AI therapist built with LLaMA3, Whisper (for speech-to-text), and Edge-TTS (for text-to-speech). Inspired by CBT and motivational interviewing, Shnathi offers warm, non-judgmental conversation in English and Swedish.
+Shanthi is an AI-powered therapist designed to provide empathetic, supportive conversations based on Cognitive Behavioral Therapy (CBT) and Motivational Interviewing techniques. Built with a combination of machine learning, natural language processing, and voice synthesis technologies, Shanthi helps users explore their thoughts and emotions in a compassionate and non-judgmental way.
 
----
+## Features
 
-## 🚀 Features
+- **Conversational AI**: Shanthi engages in empathetic and reflective conversations with users.
+- **Voice Interaction**: Supports both Speech-to-Text (STT) and Text-to-Speech (TTS) using local models.
+- **Emotion Detection**: Able to detect and respond to different emotional states, making the conversation feel more personal and supportive.
+- **Multilingual Support**: Currently supports English and Swedish, with more languages to be added in future versions.
 
-- 🗣️ Voice-based and 💬 text-based interactions
-- 🧘 Empathetic, CBT-style dialogue logic
-- 🔊 Local speech-to-text (Whisper) and text-to-speech (Edge-TTS)
-- 🧠 Locally running LLaMA3-based model via Ollama
-- 📂 Organized for easy model fine-tuning and frontend extension
+## Technologies Used
 
----
+- **Machine Learning**: 
+  - Fine-tuned models like Mistral and LLaMA for empathetic dialogue generation.
+  - Whisper for Speech-to-Text.
+  - Edge TTS for Text-to-Speech (local TTS engine).
+- **Backend**: Python-based backend with integrated AI models.
+- **Frontend**: The system can operate with either text-based or voice-based interactions, with flexibility for integration into different interfaces.
+- **Libraries**: 
+  - `transformers`, `torch` for machine learning models.
+  - `sounddevice`, `soundfile` for audio playback and recording.
+  - `edge-tts` for speech synthesis.
+  
+## Getting Started
 
-## 🗂️ Directory Structure
+### Prerequisites
 
-Shnathi/ ├── app/ │ ├── shanthi_app.py # Main application logic │ └── frontend.js # (WIP) Web interface script ├── audio/ │ ├── input_audio.wav # Temporary audio file for STT │ └── response_audio.wav # Temporary audio file for TTS ├── model/ │ ├── finetune_shanthi.py # Fine-tuning LLaMA or other models │ └── rag_shanthi.py # RAG pipeline logic ├── data/ │ ├── data_collection.py │ ├── data_preprocessing.py │ ├── empathetic_dialogues.py │ ├── extract_fb_emp_conv.py │ └── empathetic_dialogues/ # Dialogue dataset files ├── utils/ │ ├── ollama_utils.py # Whisper and Edge-TTS helpers │ ├── tone_finder.py # Tone detection logic │ └── tone_finder_bert.py # (Optional) tone using BERT ├── requirements.txt # Python dependencies └── README.md # You're here!
+1. **Python** (>= 3.8)
+2. **Virtual Environment**: It is recommended to create a virtual environment for dependencies.
 
-yaml
-Copy
-Edit
+### Installation
 
----
+1. Clone the repository:
 
-## 🛠️ Setup Instructions
+   ```bash
+   git clone https://github.com/siddharthsaminathan/Shanthi_AI_Therapist.git
+   cd Shanthi_AI_Therapist
+   
+2. Set up a virtual environment and activate it:
+   
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On macOS/Linux
+   .\venv\Scripts\activate   # On Windows
+   
+3. Install the required dependencies:
 
-### 1. Clone the repo
+   ```bash
+   pip install -r requirements.txt
+
+4. Download the necessary AI models:
+
+Whisper for Speech-to-Text
+
+Edge TTS for Text-to-Speech
+
+LLaMA/Mistral model for conversational AI (specific instructions are in the repo for model setup). -  HuggingFace or Ollama for mac with mps support
+
+## Running Shanthi
+Run the script to start the interaction:
+
+   ```bash
+   python ollama_talk.py
+
+```
+Engage with Shanthi! It will respond based on the emotional context and your tone. 
+
+## Frontend (Optional)
+If you're interested in running a frontend for Shanthi, there are options for both text-based or voice-based interactions. The frontend allows you to switch between speech and text, and it displays the conversation history.
+
+For a simple local web interface, you can refer to the streamlit_UI.py file to run it with Streamlit, or build your own custom interface.
+
+## Future Plans
+Expand Emotional Detection: Enhance emotion detection and response generation for better conversation quality.
+
+Multilingual Support: Add more languages to cater to a wider audience.
+
+Mobile App Integration: Make Shanthi accessible on mobile platforms.
+
+## Contributing
+Feel free to fork the repository, submit issues, and make pull requests. Contributions are welcome!
+
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+OpenAI for GPT-based models.
+
+Whisper and Edge TTS for local speech processing.
+
+Hugging Face for model-sharing and community support.
 
 
----
-
-## 🛠️ Setup Instructions
-
-### 1. Clone the repo
-
-```bash
-git clone https://github.com/siddharthsaminathan/Shnathi.git
-cd Shnathi
 
 
-🎯 Next Steps
- Add frontend toggle between text and voice
 
- Fine-tune LLaMA3 on emotional/empathetic data
-
- Add persistent memory support
-
- Create exportable transcripts per session
-
-🧡 Acknowledgements
-OpenAI Whisper
-
-Edge-TTS (Microsoft)
-
-Meta LLaMA3
-
-Hugging Face Datasets (Empathetic Dialogues)
-
-📬 Contact
-Siddharth Saminathan
-📫 siddharthsaminathan99@gmail.com
-🌍 LinkedIn
