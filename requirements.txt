@@ -1,0 +1,10 @@
+streamlit
+faster-whisper
+torch --index-url https://download.pytorch.org/whl/mps
+torchvision --index-url https://download.pytorch.org/whl/mps
+torchaudio --index-url https://download.pytorch.org/whl/mps
+TTS
+streamlit-webrtc
+transformers
+datasets
+accelerate
