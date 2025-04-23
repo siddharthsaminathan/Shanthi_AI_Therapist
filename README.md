@@ -28,26 +28,17 @@ Edit
 
 ### 1. Clone the repo
 
+
+---
+
+## 🛠️ Setup Instructions
+
+### 1. Clone the repo
+
 ```bash
 git clone https://github.com/siddharthsaminathan/Shnathi.git
 cd Shnathi
-2. Create virtual environment
-bash
-Copy
-Edit
-python3 -m venv venv
-source venv/bin/activate
-3. Install dependencies
-bash
-Copy
-Edit
-pip install -r requirements.txt
-4. Run Shanthi locally
-bash
-Copy
-Edit
-python app/shanthi_app.py
-Shanthi will start with voice, speak an intro, and listen to you using your microphone. You can also switch to text interaction (coming soon via frontend).
+
 
 🎯 Next Steps
  Add frontend toggle between text and voice
