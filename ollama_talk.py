@@ -6,6 +6,7 @@ from faster_whisper import WhisperModel
 import asyncio
 import edge_tts
 
+
 # === Constants ===
 AUDIO_INPUT = "input_audio.wav"
 AUDIO_OUTPUT_MP3 = "response.mp3"
@@ -28,7 +29,7 @@ def transcribe_audio():
 # === Text-to-Speech (TTS) ===
 def synthesize_speech(text):
     async def speak():
-        communicate = edge_tts.Communicate(text, voice=VOICE, device = "mps",rate="+4%")
+        communicate = edge_tts.Communicate(text, voice=VOICE,rate="+5%")
         await communicate.save(AUDIO_OUTPUT_MP3)
 
     try:

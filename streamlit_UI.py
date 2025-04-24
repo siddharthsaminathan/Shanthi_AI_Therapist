@@ -1,54 +1,160 @@
-import gradio as gr
+import streamlit as st
+import time
+import sounddevice as sd
+import soundfile as sf
 from faster_whisper import WhisperModel
-import requests
+import asyncio
+import edge_tts
+import subprocess
+from pydub import AudioSegment
+import os
 
-# Initialize Faster-Whisper model for STT
-@gr.cache()
-def load_whisper_model():
-    return WhisperModel("base", device="cpu")  # Use "cuda" if GPU is available
+# === Constants ===
+AUDIO_INPUT = "input_audio.wav"
+AUDIO_OUTPUT_MP3 = "response.mp3"
+AUDIO_OUTPUT_WAV = "response_audio.wav"
+VOICE = "en-US-AvaMultilingualNeural"
 
-whisper_model = load_whisper_model()
+st.set_page_config(page_title="Shanthi - Voice Therapist", layout="centered", initial_sidebar_state="collapsed")
 
-# LLaMA3 prompt template
-SYSTEM_PROMPT = (
-    "You are Shanthi, a compassionate AI therapist trained in CBT and motivational interviewing."
-    " Your job is not to solve problems, but to help users understand their emotions and discover insights on their own."
-    "\n\nWhen a user says something emotional, follow this flow:"
-    "\n1. Empathize and validate their feelings."
-    "\n2. Ask gentle, open-ended follow-up questions."
-    "\n3. Do not give suggestions unless they ask for them."
-    "\n4. Speak in a conversational, friendly Swedish or English tone, depending on user language."
-    "\n5. Keep responses short and warm, not robotic or verbose."
-    "\n\nAlways end your message with a reflective or clarifying question to keep the conversation going."
-)
+# Apply dark mode theme
+st.markdown("""
+    <style>
+    body {
+        background-color: #121212;
+        color: #ffffff;
+    }
+    .stChatMessage { margin-bottom: 1rem; }
+    .shanthibubble {
+        background-color: #2c2c2c;
+        padding: 1rem;
+        border-radius: 20px;
+        max-width: 80%;
+        margin-bottom: 10px;
+    }
+    .userbubble {
+        background-color: #3a3a3a;
+        padding: 1rem;
+        border-radius: 20px;
+        max-width: 80%;
+        margin-left: auto;
+        margin-bottom: 10px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# LLaMA3 local call via Ollama API
-def query_llama3(prompt):
-    """Send a prompt to the LLaMA3 model via Ollama API."""
-    response = requests.post("http://localhost:11434/api/generate", json={
-        "model": "llama3",
-        "prompt": f"<|system|>{SYSTEM_PROMPT}<|user|>{prompt}<|assistant|>",
-        "stream": False
-    })
-    if response.ok:
-        return response.json().get("response", "")
+# Whisper transcription
+model = WhisperModel("base", device="cpu")
+def record_audio(duration=15):
+    samplerate = 16000
+    recording = sd.rec(int(samplerate * duration), samplerate=samplerate, channels=1)
+    sd.wait()
+    sf.write(AUDIO_INPUT, recording, samplerate)
+
+def transcribe_audio():
+    segments, _ = model.transcribe(AUDIO_INPUT)
+    return " ".join([segment.text for segment in segments])
+
+# TTS
+async def synthesize_speech(text):
+    communicate = edge_tts.Communicate(text, voice=VOICE, rate="+5%")
+    await communicate.save(AUDIO_OUTPUT_MP3)
+    sound = AudioSegment.from_mp3(AUDIO_OUTPUT_MP3)
+    sound.export(AUDIO_OUTPUT_WAV, format="wav")
+    audio_data, samplerate = sf.read(AUDIO_OUTPUT_WAV)
+    sd.play(audio_data, samplerate=samplerate)
+    sd.wait()
+
+# Shanthi prompts
+SYSTEM_PROMPT = """
+You are Shanthi, a compassionate AI therapist trained in CBT and motivational interviewing. Your job is not to solve problems, but to help users understand their emotions and discover insights on their own.
+When a user says something emotional, follow this flow:
+1. Empathize and validate their feelings.
+2. Ask gentle, open-ended follow-up questions.
+3. Do not give suggestions unless they ask for them.
+4. Speak in a conversational, friendly English tone, depending on user language.
+5. Keep responses short and warm, not robotic or verbose.
+Always end your message with a reflective or clarifying question to keep the conversation going.
+"""
+
+def detect_emotional_state(user_input: str):
+    user_input = user_input.lower()
+    if any(phrase in user_input for phrase in ["don’t want to talk", "don’t feel like talking", "leave me alone"]):
+        return "silent"
+    elif any(word in user_input for word in ["sad", "depressed", "tired", "anxious"]):
+        return "low"
+    elif any(word in user_input for word in ["breakup", "relationship", "alone", "losing my job"]):
+        return "multiple_problems"
+    return "open"
+
+def get_system_prompt(state: str):
+    if state == "silent":
+        return "You are Shanthi, a caring AI therapist. The user doesn't want to talk right now. Gently reassure them without asking questions."
+    elif state == "low":
+        return "You are Shanthi, a caring AI therapist. The user is sad or stressed. Speak softly and gently. Be supportive, not too wordy. Avoid solutions unless asked."
+    elif state == "multiple_problems":
+        return "You are Shanthi, a caring AI therapist. The user has multiple emotional issues. Acknowledge their feelings, empathize with each problem, and gently explore them one by one."
     else:
-        return "Oops! Something went wrong with the model response."
+        return "You are Shanthi, an empathetic AI therapist who speaks in casual English. Keep it warm, modern, short, and inviting. Don’t push, reflect emotions."
 
-# Gradio interface
-def chat_with_shanthi(user_input):
-    if user_input:
-        response = query_llama3(user_input)
-        return response
-    return "Please enter a message to start the conversation."
+def query_llama(user_input, emotional_state):
+    system_prompt = get_system_prompt(emotional_state)
+    full_prompt = f"[INST] <<SYS>> {system_prompt} <</SYS>>\n{user_input} [/INST]"
+    result = subprocess.run(["ollama", "run", "llama3", full_prompt], capture_output=True, text=True)
+    response = result.stdout.strip()
+    return response.replace("<s>", "").replace("</s>", "").strip()
 
-iface = gr.Interface(
-    fn=chat_with_shanthi,
-    inputs=gr.Textbox(lines=2, placeholder="How are you feeling today?"),
-    outputs=gr.Textbox(lines=4, placeholder="Shanthi's response will appear here."),
-    title="Shanthi - AI Therapist",
-    description="Chat with Shanthi, your AI therapist trained in CBT and motivational interviewing."
-)
+# === Streamlit Chat App ===
+if "chat" not in st.session_state:
+    st.session_state.chat = []
+    st.session_state.first_run = True
 
-if __name__ == "__main__":
-    iface.launch()
+st.title("🧠 Shanthi - Your Voice Companion")
+
+chat_placeholder = st.empty()
+
+# UI rendering
+with chat_placeholder.container():
+    for sender, message in st.session_state.chat:
+        if sender == "user":
+            st.markdown(f'<div class="userbubble">🧍‍♂️ {message}</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="shanthibubble">🧠 {message}</div>', unsafe_allow_html=True)
+
+# === Main Conversation Loop ===
+def chat_loop():
+    while True:
+        record_audio()
+        user_input = transcribe_audio()
+        if user_input.strip() == "":
+            continue
+        st.session_state.chat.append(("user", user_input))
+        chat_placeholder.empty()
+        with chat_placeholder.container():
+            for sender, message in st.session_state.chat:
+                if sender == "user":
+                    st.markdown(f'<div class="userbubble">🧍‍♂️ {message}</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="shanthibubble">🧠 {message}</div>', unsafe_allow_html=True)
+
+        state = detect_emotional_state(user_input)
+        response = query_llama(user_input, state)
+        st.session_state.chat.append(("shanthi", response))
+        with chat_placeholder.container():
+            for sender, message in st.session_state.chat:
+                if sender == "user":
+                    st.markdown(f'<div class="userbubble">🧍‍♂️ {message}</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="shanthibubble">🧠 {message}</div>', unsafe_allow_html=True)
+        asyncio.run(synthesize_speech(response))
+
+if st.session_state.first_run:
+    intro = "Hello! I'm Shanthi, your AI therapist. I'm here to listen. How are you feeling today?"
+    st.session_state.chat.append(("shanthi", intro))
+    with chat_placeholder.container():
+        st.markdown(f'<div class="shanthibubble">🧠 {intro}</div>', unsafe_allow_html=True)
+    asyncio.run(synthesize_speech(intro))
+    st.session_state.first_run = False
+
+# Start the loop automatically after first response
+chat_loop()
